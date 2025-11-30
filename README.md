@@ -53,14 +53,6 @@ This project uses speech recognition and text-to-speech (TTS) to provide a hands
    python jarvis.py
    ```
 
-
-## 👨‍💻 Author
-
-**Boktiar Ahmed Bappy**
-
-Inspired by Tony Stark's JARVIS
-
-
 ### 📜 License
 
 This project is open-source and free to use for learning purposes.
