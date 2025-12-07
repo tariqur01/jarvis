@@ -5,3 +5,4 @@ PyAudio
 sounddevice==0.5.2
 numpy==2.3.4
 piper-tts
+google-genai

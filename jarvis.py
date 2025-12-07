@@ -10,6 +10,7 @@ import webbrowser
 from piper import PiperVoice
 import sounddevice as sd
 import numpy as np
+from google import genai
 
 # Logging configuration
 LOG_DIR = 'logs'
@@ -22,7 +23,7 @@ logging.basicConfig(
     format= "[ %(asctime)s ] %(name)s - %(levelname)s - %(message)s"
 )
 
-# This project is tested on Ubutu 24.04LTS and has 2 options for voice output
+# This project is tested on Ubutu 24.04 LTS and has 2 options for voice output
 # 1. espeak-ng
 # 2. piper + voice model
 
@@ -39,7 +40,8 @@ logging.basicConfig(
 # The below code segment is for loading Voice Model to be used with piper
 #..........................................................................
 # Load your ONNX voice
-voice = PiperVoice.load("hfc-female/en_US-hfc_female-medium.onnx")
+#voice = PiperVoice.load("hfc-female/en_US-hfc_female-medium.onnx")     # This is the female version
+voice = PiperVoice.load("hfc-male/en_US-hfc_male-medium.onnx")         # This is the male version
 #..........................................................................
 
 
@@ -63,7 +65,7 @@ def speak(text):
     # This code segment is for using Voice Model with Piper
     #...................................................................
     
-    audio = voice.synthesize("Hello, this is Piper TTS speaking!")
+    #audio = voice.synthesize("Hello, this is Piper TTS speaking!")
 
     for chunk in voice.synthesize(text):
         # chunk.audio_int16_bytes contains raw 16-bit PCM bytes
@@ -101,7 +103,7 @@ def takeCommand():
 
     r = sr.Recognizer()
     try:
-        with sr.Microphone(device_index=8) as source:
+        with sr.Microphone() as source:
             print("Listening...")
             r.pause_threshold = 1
             audio = r.listen(source)
@@ -116,59 +118,94 @@ def takeCommand():
 
     return query
 
+# Loading API key for Google Generative AI. You have to export the API key to shell before loading it with this command (export GEMINI_API_KEY='your api key here')
+client = genai.Client()
+
 # Greeting the user.
 greeting()
 
+#print(os.getenv("GEMINI_API_KEY"))
 
-# This is the continuous executio of the while loop until user exits.
+# This is the continuous execution of the while loop until user exits.
 while True:
     query = takeCommand().lower()
     print(query)
 
-    if "your name" in query:
-        speak("My name is jarvis sir. I am your personal voice assistant.")
-        logging.info("User asked for assistant's name.")
+    try:
 
-    elif "how are you" in query:
-        speak("I am functioning at full capacity Sir.")
-        logging.info("User asked about assistants well being.")
+        if "your name" in query:
+            speak("My name is jarvis sir. I am your personal voice assistant.")
+            logging.info("User asked for assistant's name.")
 
-    elif "who made you" in query:
-        speak("I was programmed by you sir. Did you forget?")
-        logging.info("User asked about the programmer of this system.")
+        elif "how are you" in query:
+            speak("I am functioning at full capacity Sir.")
+            logging.info("User asked about assistants well being.")
 
-    elif "open google" in query:
-        speak("Opening google sir. Please, go ahead with your search.")
-        webbrowser.open("google.com")
-        logging.info("User requested to open google on web browser.")
+        elif all(word in query for word in ['who','you']) and any(word in query for word in ['programmed','developed','created','made']):
+            speak("I was programmed by you sir. Did you forget?")
+            logging.info("User asked about the programmer of this system.")
 
-    elif "open calculator" in query:
-        speak("Opening calculator sir.")
-        subprocess.Popen("gnome-calculator")
-        logging.info("User requested to open calculator.")
+        elif "open google" in query:
+            speak("Opening google sir. Please, go ahead with your search.")
+            webbrowser.open("google.com")
+            logging.info("User requested to open google on web browser.")
 
-    elif "open notepad" in query:
-        speak("Opening Notepad Sir.")
-        logging.info("User requested to open notepad.")
+        elif "open calculator" in query:
+            speak("Opening calculator sir.")
+            calc = subprocess.Popen("gnome-calculator")
+            logging.info("User requested to open calculator.")
 
-    elif "youtube" in query:
-        speak("opening youtube sir.")
-        query = query.replace("youtube",'')
-        webbrowser.open(f"https://www.youtube.com/results?search_query={query}")
-        logging.info("User requested to open youtube.")
+        elif "close calculator" in query:
+            speak("closing calculator sir.")
+            calc.terminate()
+            logging.info("User requested to close calculator.")
 
-    elif "open terminal" in query:
-        speak("Opening terminal sir.")
-        subprocess.Popen(["gnome-terminal"])
-        logging.info("User requested to open terminal.")
 
-    elif 'time' in query:
-        current_hour = datetime.datetime.now().hour
-        current_time = datetime.datetime.now().minute
-        speak(f"the time is now {current_hour} hours and {current_time} minutes sir.")
-        logging.info("User asked for time.")
+        elif all(word in query for word in ['search','youtube']):
+            words_to_ignore = ['search','youtube','in','on','for','about']
+            for word in words_to_ignore:
+                query = query.replace(word,'')
+            speak(f'searching {query} on youtube sir.')
+            webbrowser.open(f"https://www.youtube.com/results?search_query={query}")
+            logging.info("User requested to open youtube.")
 
-    elif 'exit' in query:
-        speak("Ok sir. Exiting. Have a nice time.")
-        logging.info("User asked for exiting the application.")
-        exit()
+        elif "open terminal" in query:
+            speak("Opening terminal sir.")
+            terminal = subprocess.Popen(["gnome-terminal","--wait"])
+            logging.info("User requested to open terminal.")
+        
+        elif "close terminal" in query:
+            speak("Closing terminal sir.")
+            subprocess.call(["pkill", '-f', "gnome-terminal-server"])
+            logging.info("User requested to terminate terminal.")
+
+        elif 'time' in query:
+            current_hour = datetime.datetime.now().hour
+            current_time = datetime.datetime.now().minute
+            speak(f"the time is now {current_hour} hours and {current_time} minutes sir.")
+            logging.info("User asked for time.")
+
+        elif "wikipedia" in query:
+            words_to_ignore = ['search','wikipedia','in','on','for','about']
+            for word in words_to_ignore:
+                query = query.replace(word,'')
+            speak(f'searching {query} in wikipedia sir.')
+            result = wikipedia.summary(query, sentences = 2)
+            speak("Sir, according to wikipedia, ")
+            speak(result)
+            logging.info("User requested information from wikipedia.")
+
+        elif 'exit' in query:
+            speak("Ok sir. Exiting. Have a nice time.")
+            logging.info("User asked for exiting the application.")
+            exit()
+        
+        else:
+            response = client.models.generate_content(
+            model="gemini-2.5-flash", contents=f"Act as a personal voice assistant named Jarvis. Answer the following question in a few words. Your query is: {query}")
+            print(response.text)
+            speak(response.text)
+
+    except Exception as e:
+        logging.error(e)
+        speak("An error occures Sir. I have logged the error for you to check later.")
