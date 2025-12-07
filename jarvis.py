@@ -28,7 +28,7 @@ logging.basicConfig(
 # 2. piper + voice model
 
 
-#  Uncoment this segment to initialize espeak-ng on Linux
+#  Uncomment this segment to initialize espeak-ng on Linux
 #...............................................................
 # engine = pyttsx3.init("espeak")
 # engine.setProperty('rate',150)
@@ -55,7 +55,7 @@ def speak(text):
     Returns:
         None
     """
-    # Uncoment this segment to use voice output through espeak-ng
+    # Uncomment this segment to use voice output through espeak-ng
     #...........................................................
     # engine.say(text)
     # engine.runAndWait()
@@ -208,4 +208,4 @@ while True:
 
     except Exception as e:
         logging.error(e)
-        speak("An error occures Sir. I have logged the error for you to check later.")
+        speak("An error occured Sir. I have logged the error for you to check later.")
